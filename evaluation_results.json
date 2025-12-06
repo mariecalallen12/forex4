@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-12-06T02:31:31.214766",
+  "timestamp": "2025-12-06T02:35:00.311695",
   "backend": {
     "api_endpoints": [
       {
@@ -184,7 +184,7 @@
     "completion_rate": 88.0
   },
   "documentation": {
-    "total_files": 11,
+    "total_files": 12,
     "doc_files": [
       {
         "file": "giao-dien-tinh-nang-admin.md",
@@ -225,6 +225,10 @@
       {
         "file": "DIGITAL_UTOPIA_CLIENT_APP_REPORT.md",
         "size_kb": 84.49
+      },
+      {
+        "file": "QUICK_REFERENCE.md",
+        "size_kb": 1.54
       },
       {
         "file": "VUE_AI_DESIGN_PROMPT.md",
