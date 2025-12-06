@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-12-06T09:02:08.640734",
+  "timestamp": "2025-12-06T09:05:59.363251",
   "backend": {
     "api_endpoints": [
       {
@@ -81,6 +81,11 @@
         "classes": 2
       },
       {
+        "module": "market_data",
+        "file": "market_data.py",
+        "classes": 8
+      },
+      {
         "module": "user",
         "file": "user.py",
         "classes": 6
@@ -106,7 +111,7 @@
         "classes": 2
       }
     ],
-    "total_models": 7,
+    "total_models": 8,
     "services": [
       {
         "module": "compliance_service",
@@ -150,7 +155,7 @@
       }
     ],
     "total_services": 8,
-    "completion_rate": 95.83
+    "completion_rate": 100.0
   },
   "frontend": {
     "client_app": {
@@ -166,10 +171,10 @@
     "completion_rate": 100.0
   },
   "database": {
-    "migrations": 6,
-    "models": 7,
+    "migrations": 7,
+    "models": 8,
     "has_alembic": true,
-    "completion_rate": 93.75
+    "completion_rate": 100.0
   },
   "tests": {
     "test_files": [
@@ -187,11 +192,15 @@
     "completion_rate": 100.0
   },
   "documentation": {
-    "total_files": 25,
+    "total_files": 26,
     "doc_files": [
       {
         "file": "giao-dien-tinh-nang-admin.md",
         "size_kb": 12.12
+      },
+      {
+        "file": "BAO_CAO_TONG_HOP_TOAN_DIEN.md",
+        "size_kb": 28.14
       },
       {
         "file": "DOCKER_IMPLEMENTATION_SUMMARY.md",
@@ -294,7 +303,7 @@
     "completion_rate": 100
   },
   "overall": {
-    "completion_rate": 97.81,
+    "completion_rate": 100.0,
     "backend_weight": "30%",
     "frontend_weight": "30%",
     "database_weight": "15%",
