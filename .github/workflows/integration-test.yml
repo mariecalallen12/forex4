@@ -17,7 +17,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Create necessary directories
         run: |
@@ -157,7 +157,7 @@ jobs:
     needs: [docker-compose-test]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Create directories
         run: |
@@ -218,10 +218,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Run Trivy vulnerability scanner - Backend
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.33.1
         with:
           scan-type: 'config'
           scan-ref: './backend'
@@ -230,7 +230,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload Trivy results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-backend-results.sarif'
@@ -238,7 +238,7 @@ jobs:
         continue-on-error: true
 
       - name: Run Trivy vulnerability scanner - Client App
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.33.1
         with:
           scan-type: 'config'
           scan-ref: './client-app'
@@ -247,7 +247,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload Trivy Client results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-client-results.sarif'
