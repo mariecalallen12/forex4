@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-12-06T02:29:09.830264",
+  "timestamp": "2025-12-06T02:31:31.214766",
   "backend": {
     "api_endpoints": [
       {
@@ -184,7 +184,7 @@
     "completion_rate": 88.0
   },
   "documentation": {
-    "total_files": 10,
+    "total_files": 11,
     "doc_files": [
       {
         "file": "giao-dien-tinh-nang-admin.md",
@@ -219,6 +219,10 @@
         "size_kb": 28.89
       },
       {
+        "file": "INDEX_DANH_GIA.md",
+        "size_kb": 8.48
+      },
+      {
         "file": "DIGITAL_UTOPIA_CLIENT_APP_REPORT.md",
         "size_kb": 84.49
       },
@@ -228,7 +232,7 @@
       }
     ],
     "vietnamese_docs": 2,
-    "completion_rate": 100.0
+    "completion_rate": 100
   },
   "overall": {
     "completion_rate": 91.51,
