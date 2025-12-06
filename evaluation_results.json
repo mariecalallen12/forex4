@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-12-06T02:54:32.875017",
+  "timestamp": "2025-12-06T09:02:08.640734",
   "backend": {
     "api_endpoints": [
       {
@@ -187,11 +187,19 @@
     "completion_rate": 100.0
   },
   "documentation": {
-    "total_files": 14,
+    "total_files": 25,
     "doc_files": [
       {
         "file": "giao-dien-tinh-nang-admin.md",
         "size_kb": 12.12
+      },
+      {
+        "file": "DOCKER_IMPLEMENTATION_SUMMARY.md",
+        "size_kb": 10.79
+      },
+      {
+        "file": "CI_CD_QUICK_START.md",
+        "size_kb": 6.06
       },
       {
         "file": "DIGITAL_UTOPIA_DESIGN_SUMMARY.md",
@@ -202,16 +210,32 @@
         "size_kb": 8.48
       },
       {
+        "file": "IMPLEMENTATION_SUMMARY.md",
+        "size_kb": 17.46
+      },
+      {
         "file": "BAO_CAO_DANH_GIA_DU_AN.md",
         "size_kb": 29.03
+      },
+      {
+        "file": "CI_CD_WORKFLOW_GUIDE.md",
+        "size_kb": 15.06
       },
       {
         "file": "giao-dien-khach-hang-ca-nhan.md",
         "size_kb": 19.89
       },
       {
+        "file": "DOCKER_README.md",
+        "size_kb": 4.69
+      },
+      {
+        "file": "SETUP_INSTRUCTIONS.md",
+        "size_kb": 11.82
+      },
+      {
         "file": "README.md",
-        "size_kb": 47.69
+        "size_kb": 48.89
       },
       {
         "file": "DIGITAL_UTOPIA_SYSTEM_WORKFLOWS.md",
@@ -234,12 +258,32 @@
         "size_kb": 8.48
       },
       {
+        "file": "DOCKER_DEPLOYMENT.md",
+        "size_kb": 15.64
+      },
+      {
         "file": "DIGITAL_UTOPIA_CLIENT_APP_REPORT.md",
         "size_kb": 84.49
       },
       {
+        "file": "PROJECT_STATUS_REPORT.md",
+        "size_kb": 14.78
+      },
+      {
+        "file": "BAO_CAO_TIEN_DO_HOAN_THIEN.md",
+        "size_kb": 12.26
+      },
+      {
         "file": "QUICK_REFERENCE.md",
         "size_kb": 1.54
+      },
+      {
+        "file": "ACTIVATION_GUIDE.md",
+        "size_kb": 14.18
+      },
+      {
+        "file": "COMPLETE_SETUP_SUMMARY.md",
+        "size_kb": 17.27
       },
       {
         "file": "VUE_AI_DESIGN_PROMPT.md",
