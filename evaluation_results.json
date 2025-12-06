@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-12-06T09:05:59.363251",
+  "timestamp": "2025-12-06T09:10:42.001113",
   "backend": {
     "api_endpoints": [
       {
@@ -192,7 +192,7 @@
     "completion_rate": 100.0
   },
   "documentation": {
-    "total_files": 26,
+    "total_files": 27,
     "doc_files": [
       {
         "file": "giao-dien-tinh-nang-admin.md",
@@ -200,7 +200,7 @@
       },
       {
         "file": "BAO_CAO_TONG_HOP_TOAN_DIEN.md",
-        "size_kb": 28.14
+        "size_kb": 31.3
       },
       {
         "file": "DOCKER_IMPLEMENTATION_SUMMARY.md",
@@ -213,6 +213,10 @@
       {
         "file": "DIGITAL_UTOPIA_DESIGN_SUMMARY.md",
         "size_kb": 7.5
+      },
+      {
+        "file": "TONG_KET_HOAN_THANH_100.md",
+        "size_kb": 10.19
       },
       {
         "file": "HUONG_DAN_DANH_GIA.md",
