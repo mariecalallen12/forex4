@@ -49,7 +49,7 @@ pillow==10.1.0
 fastapi-mail==1.4.1
 
 # WebSocket Support
-websockets==12.0
+websockets==15.0.1
 
 # CORS
 fastapi-cors==0.0.6
