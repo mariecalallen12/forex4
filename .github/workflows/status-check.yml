@@ -1,0 +1,135 @@
+name: Quick Status Check
+
+on:
+  push:
+    branches: [ '**' ]
+  pull_request:
+    branches: [ '**' ]
+  workflow_dispatch:
+
+jobs:
+  quick-check:
+    name: Quick Health Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check File Structure
+        run: |
+          echo "## Repository Structure Check" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### Required Directories" >> $GITHUB_STEP_SUMMARY
+          for dir in backend client-app Admin-app nginx scripts; do
+            if [ -d "$dir" ]; then
+              echo "✅ $dir exists" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ $dir missing" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Required Files" >> $GITHUB_STEP_SUMMARY
+          for file in docker-compose.yml .env.example README.md; do
+            if [ -f "$file" ]; then
+              echo "✅ $file exists" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ $file missing" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+      - name: Check Docker Configuration
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Docker Configuration" >> $GITHUB_STEP_SUMMARY
+          
+          # Check docker-compose files
+          if docker-compose config > /dev/null 2>&1; then
+            echo "✅ docker-compose.yml is valid" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ docker-compose.yml validation failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Count services
+          services=$(grep -E "^\s+[a-z-]+:" docker-compose.yml | wc -l)
+          echo "📊 Services configured: $services" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check Backend Configuration
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Backend Configuration" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f "backend/requirements.txt" ]; then
+            deps=$(wc -l < backend/requirements.txt)
+            echo "📦 Python dependencies: $deps" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ -f "backend/main.py" ]; then
+            echo "✅ Main entry point exists" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ -d "backend/app" ]; then
+            modules=$(find backend/app/modules -type d -maxdepth 1 | tail -n +2 | wc -l)
+            echo "📂 API modules: $modules" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Check Frontend Configuration
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Frontend Configuration" >> $GITHUB_STEP_SUMMARY
+          
+          # Client App
+          if [ -f "client-app/package.json" ]; then
+            echo "✅ Client App package.json exists" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Admin App
+          if [ -f "Admin-app/package.json" ]; then
+            echo "✅ Admin App package.json exists" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Check CI/CD Workflows
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### CI/CD Workflows" >> $GITHUB_STEP_SUMMARY
+          
+          workflows=$(find .github/workflows -name "*.yml" | wc -l)
+          echo "⚙️ Workflow files: $workflows" >> $GITHUB_STEP_SUMMARY
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "#### Configured Workflows" >> $GITHUB_STEP_SUMMARY
+          find .github/workflows -name "*.yml" -exec basename {} \; | sed 's/^/- /' >> $GITHUB_STEP_SUMMARY
+
+      - name: Security Checks
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Security Checks" >> $GITHUB_STEP_SUMMARY
+          
+          # Check for hardcoded secrets patterns
+          if grep -r "password.*=" --include="*.py" --include="*.js" backend/ client-app/ Admin-app/ 2>/dev/null | grep -v "POSTGRES_PASSWORD" | grep -q .; then
+            echo "⚠️ Potential hardcoded passwords found" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ No obvious hardcoded passwords" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Check for .env in git
+          if git ls-files | grep -q "^\.env$"; then
+            echo "❌ .env file is tracked in git (security risk)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ .env file not tracked" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Generate Quick Report
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Actor: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Event: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Quick status check completed successfully" >> $GITHUB_STEP_SUMMARY

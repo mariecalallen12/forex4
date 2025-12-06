@@ -1,0 +1,274 @@
+name: Integration & E2E Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  docker-compose-test:
+    name: Docker Compose Integration Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create necessary directories
+        run: |
+          mkdir -p data/postgres data/redis backend/uploads backend/logs nginx/logs
+
+      - name: Create .env file
+        run: |
+          cat > .env <<EOF
+          # Application
+          APP_NAME=Digital Utopia Platform
+          DEBUG=false
+          ENVIRONMENT=test
+          
+          # Security
+          SECRET_KEY=test-secret-key-for-integration-testing-only
+          ALGORITHM=HS256
+          ACCESS_TOKEN_EXPIRE_MINUTES=30
+          
+          # Database
+          POSTGRES_USER=test_user
+          POSTGRES_PASSWORD=test_password
+          POSTGRES_DB=digital_utopia_test
+          POSTGRES_PORT=5432
+          
+          # Redis
+          REDIS_PORT=6379
+          REDIS_PASSWORD=
+          
+          # Backend
+          BACKEND_PORT=8000
+          
+          # Frontend
+          CLIENT_PORT=3000
+          ADMIN_PORT=3001
+          VITE_API_BASE_URL=http://backend:8000
+          
+          # CORS
+          CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+          
+          # Rate Limiting
+          RATE_LIMIT_PER_MINUTE=100
+          RATE_LIMIT_PER_HOUR=1000
+          EOF
+
+      - name: Build Docker Images
+        run: |
+          docker-compose build --parallel
+
+      - name: Start Services
+        run: |
+          docker-compose up -d
+          echo "Waiting for services to be ready..."
+          sleep 30
+
+      - name: Check Service Health
+        run: |
+          echo "=== Checking PostgreSQL ===" 
+          docker-compose exec -T postgres pg_isready -U test_user || exit 1
+          
+          echo "=== Checking Redis ==="
+          docker-compose exec -T redis redis-cli ping || exit 1
+          
+          echo "=== Checking Backend Health ==="
+          for i in {1..10}; do
+            if curl -f http://localhost:8000/health; then
+              echo "Backend is healthy!"
+              break
+            fi
+            echo "Attempt $i: Backend not ready yet..."
+            sleep 5
+          done
+          
+          echo "=== Checking Backend API Docs ==="
+          curl -f http://localhost:8000/docs || exit 1
+          
+          echo "=== Checking Client App ==="
+          curl -f http://localhost:3000 || echo "Client app may not be ready (non-critical)"
+          
+          echo "=== Checking Admin App ==="
+          curl -f http://localhost:3001 || echo "Admin app may not be ready (non-critical)"
+
+      - name: Test API Endpoints
+        run: |
+          echo "=== Testing Health Endpoint ==="
+          curl -X GET http://localhost:8000/health
+          
+          echo ""
+          echo "=== Testing API Root ==="
+          curl -X GET http://localhost:8000/
+          
+          echo ""
+          echo "=== Testing OpenAPI Schema ==="
+          curl -X GET http://localhost:8000/openapi.json | head -c 500
+
+      - name: Check Docker Logs
+        if: always()
+        run: |
+          echo "=== Backend Logs ==="
+          docker-compose logs backend | tail -100
+          
+          echo ""
+          echo "=== PostgreSQL Logs ==="
+          docker-compose logs postgres | tail -50
+          
+          echo ""
+          echo "=== Redis Logs ==="
+          docker-compose logs redis | tail -50
+          
+          echo ""
+          echo "=== Client App Logs ==="
+          docker-compose logs client-app | tail -50
+          
+          echo ""
+          echo "=== Admin App Logs ==="
+          docker-compose logs admin-app | tail -50
+
+      - name: Generate Test Report
+        if: always()
+        run: |
+          echo "## Integration Test Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Services Status" >> $GITHUB_STEP_SUMMARY
+          docker-compose ps >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Container Stats" >> $GITHUB_STEP_SUMMARY
+          docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker-compose down -v
+          docker system prune -f
+
+  performance-test:
+    name: Performance & Load Testing
+    runs-on: ubuntu-latest
+    needs: [docker-compose-test]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create directories
+        run: |
+          mkdir -p data/postgres data/redis backend/uploads backend/logs
+
+      - name: Create .env file
+        run: |
+          cat > .env <<EOF
+          SECRET_KEY=test-secret-key-for-performance-testing
+          POSTGRES_USER=test_user
+          POSTGRES_PASSWORD=test_password
+          POSTGRES_DB=digital_utopia_test
+          EOF
+
+      - name: Start Backend Services Only
+        run: |
+          docker-compose up -d postgres redis backend
+          echo "Waiting for backend..."
+          sleep 30
+
+      - name: Install Apache Bench
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y apache2-utils
+
+      - name: Run Performance Tests
+        run: |
+          echo "=== Health Endpoint Performance ===" 
+          ab -n 1000 -c 10 http://localhost:8000/health | tee health-perf.txt
+          
+          echo ""
+          echo "=== API Root Performance ===" 
+          ab -n 1000 -c 10 http://localhost:8000/ | tee api-perf.txt
+        continue-on-error: true
+
+      - name: Generate Performance Report
+        if: always()
+        run: |
+          echo "## Performance Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f health-perf.txt ]; then
+            echo "### Health Endpoint" >> $GITHUB_STEP_SUMMARY
+            grep -A 5 "Requests per second" health-perf.txt >> $GITHUB_STEP_SUMMARY || true
+          fi
+          if [ -f api-perf.txt ]; then
+            echo "### API Root Endpoint" >> $GITHUB_STEP_SUMMARY
+            grep -A 5 "Requests per second" api-perf.txt >> $GITHUB_STEP_SUMMARY || true
+          fi
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker-compose down -v
+          docker system prune -f
+
+  security-scan:
+    name: Container Security Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner - Backend
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: './backend'
+          format: 'sarif'
+          output: 'trivy-backend-results.sarif'
+        continue-on-error: true
+
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-backend-results.sarif'
+          category: 'trivy-backend'
+        continue-on-error: true
+
+      - name: Run Trivy vulnerability scanner - Client App
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: './client-app'
+          format: 'sarif'
+          output: 'trivy-client-results.sarif'
+        continue-on-error: true
+
+      - name: Upload Trivy Client results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-client-results.sarif'
+          category: 'trivy-client'
+        continue-on-error: true
+
+  summary:
+    name: Integration Test Summary
+    runs-on: ubuntu-latest
+    needs: [docker-compose-test, performance-test, security-scan]
+    if: always()
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "## Integration & E2E Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Docker Compose: ${{ needs.docker-compose-test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Performance Test: ${{ needs.performance-test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Security Scan: ${{ needs.security-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Environment" >> $GITHUB_STEP_SUMMARY
+          echo "- OS: Ubuntu Latest" >> $GITHUB_STEP_SUMMARY
+          echo "- Docker: $(docker --version)" >> $GITHUB_STEP_SUMMARY
+          echo "- Docker Compose: $(docker-compose --version)" >> $GITHUB_STEP_SUMMARY

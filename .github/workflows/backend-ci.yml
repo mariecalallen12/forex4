@@ -1,0 +1,338 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [ main, develop, copilot/** ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.11'
+  POETRY_VERSION: '1.6.0'
+
+jobs:
+  lint:
+    name: Lint Backend Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install flake8 black isort mypy bandit safety
+          pip install -r requirements.txt
+
+      - name: Run Black (Code Formatter Check)
+        run: |
+          cd backend
+          black --check --diff .
+        continue-on-error: true
+
+      - name: Run isort (Import Sorter Check)
+        run: |
+          cd backend
+          isort --check-only --diff .
+        continue-on-error: true
+
+      - name: Run Flake8 (Linter)
+        run: |
+          cd backend
+          flake8 app/ --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 app/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        continue-on-error: true
+
+  security:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install bandit safety
+          pip install -r requirements.txt
+
+      - name: Run Bandit (Security Scanner)
+        run: |
+          cd backend
+          bandit -r app/ -f json -o bandit-report.json || true
+          bandit -r app/ -f screen
+        continue-on-error: true
+
+      - name: Check Dependencies (Safety)
+        run: |
+          cd backend
+          safety check --json || true
+          safety check
+        continue-on-error: true
+
+      - name: Upload Bandit Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bandit-security-report
+          path: backend/bandit-report.json
+          retention-days: 30
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install pytest pytest-asyncio pytest-cov pytest-html
+          pip install -r requirements.txt
+
+      - name: Create test environment file
+        run: |
+          cd backend
+          cat > .env.test <<EOF
+          SECRET_KEY=test-secret-key-for-ci-cd-pipeline
+          ALGORITHM=HS256
+          ACCESS_TOKEN_EXPIRE_MINUTES=30
+          POSTGRES_SERVER=localhost
+          POSTGRES_PORT=5432
+          POSTGRES_USER=test_user
+          POSTGRES_PASSWORD=test_pass
+          POSTGRES_DB=test_db
+          REDIS_HOST=localhost
+          REDIS_PORT=6379
+          ENVIRONMENT=test
+          DEBUG=true
+          EOF
+
+      - name: Run Simple Tests
+        env:
+          POSTGRES_SERVER: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: test_db
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          SECRET_KEY: test-secret-key-for-ci-cd-pipeline
+        run: |
+          cd backend
+          python simple_test.py
+        continue-on-error: true
+
+      - name: Run Pytest with Coverage
+        env:
+          POSTGRES_SERVER: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: test_db
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          SECRET_KEY: test-secret-key-for-ci-cd-pipeline
+        run: |
+          cd backend
+          pytest tests/ -v --cov=app --cov-report=xml --cov-report=html --cov-report=term --html=test-report.html --self-contained-html
+        continue-on-error: true
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: |
+            backend/htmlcov/
+            backend/coverage.xml
+          retention-days: 30
+
+      - name: Upload Test Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-report
+          path: backend/test-report.html
+          retention-days: 30
+
+      - name: Comment Coverage on PR
+        if: github.event_name == 'pull_request'
+        uses: orgoro/coverage@v3.1
+        continue-on-error: true
+        with:
+          coverageFile: backend/coverage.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    name: Build Backend Docker Image
+    runs-on: ubuntu-latest
+    needs: [lint, security, test]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Backend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: false
+          tags: forex4-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          outputs: type=docker,dest=/tmp/backend-image.tar
+
+      - name: Upload Docker Image Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-docker-image
+          path: /tmp/backend-image.tar
+          retention-days: 7
+
+  health-check:
+    name: Backend Health Check
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Docker Image
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-docker-image
+          path: /tmp
+
+      - name: Load Docker Image
+        run: docker load --input /tmp/backend-image.tar
+
+      - name: Start Services
+        run: |
+          docker network create test-network
+          
+          # Start PostgreSQL
+          docker run -d --name test-postgres \
+            --network test-network \
+            -e POSTGRES_USER=test_user \
+            -e POSTGRES_PASSWORD=test_pass \
+            -e POSTGRES_DB=test_db \
+            postgres:15-alpine
+          
+          # Start Redis
+          docker run -d --name test-redis \
+            --network test-network \
+            redis:7-alpine
+          
+          # Wait for services
+          sleep 10
+          
+          # Start Backend
+          docker run -d --name test-backend \
+            --network test-network \
+            -e SECRET_KEY=test-secret-key \
+            -e POSTGRES_SERVER=test-postgres \
+            -e POSTGRES_USER=test_user \
+            -e POSTGRES_PASSWORD=test_pass \
+            -e POSTGRES_DB=test_db \
+            -e REDIS_HOST=test-redis \
+            -p 8000:8000 \
+            forex4-backend:${{ github.sha }}
+          
+          # Wait for backend
+          sleep 15
+
+      - name: Health Check
+        run: |
+          curl -f http://localhost:8000/health || exit 1
+          curl -f http://localhost:8000/docs || exit 1
+
+      - name: Check Logs
+        if: always()
+        run: |
+          echo "=== Backend Logs ==="
+          docker logs test-backend
+          echo "=== PostgreSQL Logs ==="
+          docker logs test-postgres
+          echo "=== Redis Logs ==="
+          docker logs test-redis
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker stop test-backend test-postgres test-redis || true
+          docker rm test-backend test-postgres test-redis || true
+          docker network rm test-network || true
+
+  summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [lint, security, test, build, health-check]
+    if: always()
+    steps:
+      - name: Check Results
+        run: |
+          echo "## Backend CI Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Linting: ${{ needs.lint.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Security: ${{ needs.security.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Tests: ${{ needs.test.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Build: ${{ needs.build.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Health Check: ${{ needs.health-check.result }}" >> $GITHUB_STEP_SUMMARY

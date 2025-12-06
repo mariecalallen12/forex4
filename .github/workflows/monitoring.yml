@@ -1,0 +1,251 @@
+name: Monitoring & Maintenance
+
+on:
+  schedule:
+    # Run daily at 1 AM UTC
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+jobs:
+  dependency-check:
+    name: Dependency Vulnerability Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check Python Dependencies
+        run: |
+          cd backend
+          pip install safety pip-audit
+          echo "## Python Dependency Security Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          safety check -r requirements.txt --json > safety-report.json || true
+          pip-audit -r requirements.txt --format json > pip-audit-report.json || true
+          
+          echo "### Safety Check Results" >> $GITHUB_STEP_SUMMARY
+          safety check -r requirements.txt || true
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Pip Audit Results" >> $GITHUB_STEP_SUMMARY
+          pip-audit -r requirements.txt || true
+        continue-on-error: true
+
+      - name: Upload Python Security Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-security-reports
+          path: |
+            backend/safety-report.json
+            backend/pip-audit-report.json
+          retention-days: 90
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check Node.js Dependencies - Client App
+        run: |
+          cd client-app
+          echo "## Client App Dependency Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          npm audit --json > npm-audit-client.json || true
+          npm audit || true
+        continue-on-error: true
+
+      - name: Check Node.js Dependencies - Admin App
+        run: |
+          cd Admin-app
+          echo "## Admin App Dependency Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          npm audit --json > npm-audit-admin.json || true
+          npm audit || true
+        continue-on-error: true
+
+      - name: Upload Node.js Security Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: nodejs-security-reports
+          path: |
+            client-app/npm-audit-client.json
+            Admin-app/npm-audit-admin.json
+          retention-days: 90
+
+  code-quality:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python, javascript
+        continue-on-error: true
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        continue-on-error: true
+
+      - name: Count Lines of Code
+        run: |
+          echo "## Code Statistics" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          echo "### Backend (Python)" >> $GITHUB_STEP_SUMMARY
+          find backend/app -name "*.py" | xargs wc -l | tail -1 >> $GITHUB_STEP_SUMMARY
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Client App (Vue/JS)" >> $GITHUB_STEP_SUMMARY
+          find client-app/src -name "*.vue" -o -name "*.js" | xargs wc -l | tail -1 >> $GITHUB_STEP_SUMMARY
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Admin App (Vue/JS)" >> $GITHUB_STEP_SUMMARY
+          find Admin-app/src -name "*.vue" -o -name "*.js" | xargs wc -l | tail -1 >> $GITHUB_STEP_SUMMARY
+
+      - name: Check Git Repository Size
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Repository Size" >> $GITHUB_STEP_SUMMARY
+          du -sh . >> $GITHUB_STEP_SUMMARY
+
+  docker-image-scan:
+    name: Docker Image Security Scan
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [backend, client-app, admin-app]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Image
+        run: |
+          if [ "${{ matrix.service }}" == "admin-app" ]; then
+            cd Admin-app
+          else
+            cd ${{ matrix.service }}
+          fi
+          docker build -t ${{ matrix.service }}:scan .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ matrix.service }}:scan'
+          format: 'sarif'
+          output: 'trivy-${{ matrix.service }}.sarif'
+        continue-on-error: true
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-${{ matrix.service }}.sarif'
+          category: 'trivy-${{ matrix.service }}'
+        continue-on-error: true
+
+  health-check:
+    name: Repository Health Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for TODO/FIXME comments
+        run: |
+          echo "## Code Health Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### TODO Comments" >> $GITHUB_STEP_SUMMARY
+          grep -r "TODO" --include="*.py" --include="*.js" --include="*.vue" . | wc -l >> $GITHUB_STEP_SUMMARY
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### FIXME Comments" >> $GITHUB_STEP_SUMMARY
+          grep -r "FIXME" --include="*.py" --include="*.js" --include="*.vue" . | wc -l >> $GITHUB_STEP_SUMMARY
+
+      - name: Check Documentation
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Documentation Files" >> $GITHUB_STEP_SUMMARY
+          find . -name "*.md" | wc -l >> $GITHUB_STEP_SUMMARY
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### README Files" >> $GITHUB_STEP_SUMMARY
+          find . -name "README.md" -exec echo {} \; >> $GITHUB_STEP_SUMMARY
+
+      - name: Check Test Coverage
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Files" >> $GITHUB_STEP_SUMMARY
+          echo "Backend tests:" >> $GITHUB_STEP_SUMMARY
+          find backend -name "test_*.py" | wc -l >> $GITHUB_STEP_SUMMARY
+
+  update-dependencies:
+    name: Check for Outdated Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check Python Outdated Packages
+        run: |
+          cd backend
+          pip install pip-upgrader
+          echo "## Outdated Dependencies" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Python Packages" >> $GITHUB_STEP_SUMMARY
+          pip list --outdated || true
+        continue-on-error: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check Node.js Outdated Packages - Client
+        run: |
+          cd client-app
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Client App NPM Packages" >> $GITHUB_STEP_SUMMARY
+          npm outdated || true
+        continue-on-error: true
+
+      - name: Check Node.js Outdated Packages - Admin
+        run: |
+          cd Admin-app
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Admin App NPM Packages" >> $GITHUB_STEP_SUMMARY
+          npm outdated || true
+        continue-on-error: true
+
+  summary:
+    name: Monitoring Summary
+    runs-on: ubuntu-latest
+    needs: [dependency-check, code-quality, docker-image-scan, health-check, update-dependencies]
+    if: always()
+    steps:
+      - name: Generate Summary
+        run: |
+          echo "## Daily Monitoring Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Date: $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Job Results" >> $GITHUB_STEP_SUMMARY
+          echo "- Dependency Check: ${{ needs.dependency-check.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Code Quality: ${{ needs.code-quality.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Docker Image Scan: ${{ needs.docker-image-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Health Check: ${{ needs.health-check.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Update Dependencies: ${{ needs.update-dependencies.result }}" >> $GITHUB_STEP_SUMMARY
