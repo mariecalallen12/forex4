@@ -1,0 +1,261 @@
+{
+  "timestamp": "2025-12-06T02:54:32.875017",
+  "backend": {
+    "api_endpoints": [
+      {
+        "module": "users",
+        "file": "users.py",
+        "endpoints": 5
+      },
+      {
+        "module": "auth",
+        "file": "auth.py",
+        "endpoints": 9
+      },
+      {
+        "module": "advanced_trading",
+        "file": "advanced_trading.py",
+        "endpoints": 9
+      },
+      {
+        "module": "auth_new",
+        "file": "auth_new.py",
+        "endpoints": 9
+      },
+      {
+        "module": "risk_management",
+        "file": "risk_management.py",
+        "endpoints": 10
+      },
+      {
+        "module": "compliance",
+        "file": "compliance.py",
+        "endpoints": 37
+      },
+      {
+        "module": "market",
+        "file": "market.py",
+        "endpoints": 3
+      },
+      {
+        "module": "admin",
+        "file": "admin.py",
+        "endpoints": 19
+      },
+      {
+        "module": "client",
+        "file": "client.py",
+        "endpoints": 6
+      },
+      {
+        "module": "financial",
+        "file": "financial.py",
+        "endpoints": 6
+      },
+      {
+        "module": "staff_referrals",
+        "file": "staff_referrals.py",
+        "endpoints": 4
+      },
+      {
+        "module": "trading",
+        "file": "trading.py",
+        "endpoints": 14
+      },
+      {
+        "module": "portfolio",
+        "file": "portfolio.py",
+        "endpoints": 14
+      }
+    ],
+    "total_endpoints": 145,
+    "models": [
+      {
+        "module": "audit",
+        "file": "audit.py",
+        "classes": 2
+      },
+      {
+        "module": "referral",
+        "file": "referral.py",
+        "classes": 2
+      },
+      {
+        "module": "user",
+        "file": "user.py",
+        "classes": 6
+      },
+      {
+        "module": "compliance",
+        "file": "compliance.py",
+        "classes": 4
+      },
+      {
+        "module": "financial",
+        "file": "financial.py",
+        "classes": 3
+      },
+      {
+        "module": "trading",
+        "file": "trading.py",
+        "classes": 9
+      },
+      {
+        "module": "portfolio",
+        "file": "portfolio.py",
+        "classes": 2
+      }
+    ],
+    "total_models": 7,
+    "services": [
+      {
+        "module": "compliance_service",
+        "file": "compliance_service.py",
+        "functions": 15
+      },
+      {
+        "module": "user_service",
+        "file": "user_service.py",
+        "functions": 14
+      },
+      {
+        "module": "cache_service",
+        "file": "cache_service.py",
+        "functions": 23
+      },
+      {
+        "module": "referral_service",
+        "file": "referral_service.py",
+        "functions": 15
+      },
+      {
+        "module": "admin_service",
+        "file": "admin_service.py",
+        "functions": 10
+      },
+      {
+        "module": "financial_service",
+        "file": "financial_service.py",
+        "functions": 14
+      },
+      {
+        "module": "trading_service",
+        "file": "trading_service.py",
+        "functions": 13
+      },
+      {
+        "module": "portfolio_service",
+        "file": "portfolio_service.py",
+        "functions": 11
+      }
+    ],
+    "total_services": 8,
+    "completion_rate": 95.83
+  },
+  "frontend": {
+    "client_app": {
+      "components": 75,
+      "views": 14,
+      "total_files": 89
+    },
+    "admin_app": {
+      "components": 36,
+      "views": 8,
+      "total_files": 44
+    },
+    "completion_rate": 100.0
+  },
+  "database": {
+    "migrations": 6,
+    "models": 7,
+    "has_alembic": true,
+    "completion_rate": 93.75
+  },
+  "tests": {
+    "test_files": [
+      "backend/test_comprehensive_auth.py",
+      "backend/test_auth.py",
+      "backend/test_endpoints.py",
+      "backend/tests/test_financial_module.py",
+      "backend/tests/test_auth_integration.py",
+      "backend/tests/test_services.py",
+      "backend/tests/test_trading_module.py",
+      "backend/tests/test_portfolio_module.py"
+    ],
+    "total_test_files": 8,
+    "total_test_functions": 77,
+    "completion_rate": 100.0
+  },
+  "documentation": {
+    "total_files": 14,
+    "doc_files": [
+      {
+        "file": "giao-dien-tinh-nang-admin.md",
+        "size_kb": 12.12
+      },
+      {
+        "file": "DIGITAL_UTOPIA_DESIGN_SUMMARY.md",
+        "size_kb": 7.5
+      },
+      {
+        "file": "HUONG_DAN_DANH_GIA.md",
+        "size_kb": 8.48
+      },
+      {
+        "file": "BAO_CAO_DANH_GIA_DU_AN.md",
+        "size_kb": 29.03
+      },
+      {
+        "file": "giao-dien-khach-hang-ca-nhan.md",
+        "size_kb": 19.89
+      },
+      {
+        "file": "README.md",
+        "size_kb": 47.69
+      },
+      {
+        "file": "DIGITAL_UTOPIA_SYSTEM_WORKFLOWS.md",
+        "size_kb": 24.15
+      },
+      {
+        "file": "CHECKLIST_HOAN_THIEN_100.md",
+        "size_kb": 15.33
+      },
+      {
+        "file": "DEPLOYMENT_GUIDE.md",
+        "size_kb": 14.74
+      },
+      {
+        "file": "DIGITAL_UTOPIA_DATABASE_SCHEMA.md",
+        "size_kb": 28.89
+      },
+      {
+        "file": "INDEX_DANH_GIA.md",
+        "size_kb": 8.48
+      },
+      {
+        "file": "DIGITAL_UTOPIA_CLIENT_APP_REPORT.md",
+        "size_kb": 84.49
+      },
+      {
+        "file": "QUICK_REFERENCE.md",
+        "size_kb": 1.54
+      },
+      {
+        "file": "VUE_AI_DESIGN_PROMPT.md",
+        "size_kb": 46.74
+      }
+    ],
+    "vietnamese_docs": 2,
+    "completion_rate": 100
+  },
+  "overall": {
+    "completion_rate": 97.81,
+    "backend_weight": "30%",
+    "frontend_weight": "30%",
+    "database_weight": "15%",
+    "tests_weight": "15%",
+    "documentation_weight": "10%",
+    "status": "Hoàn thiện xuất sắc"
+  }
+}
