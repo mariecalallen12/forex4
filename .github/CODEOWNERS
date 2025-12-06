@@ -1,0 +1,31 @@
+# CODEOWNERS - Automatic code review assignments
+# Each line is a file pattern followed by one or more owners
+
+# Default owner for everything in the repo
+* @mariecalallen12
+
+# CI/CD workflows - require DevOps review
+/.github/workflows/ @mariecalallen12
+/.github/dependabot.yml @mariecalallen12
+
+# Backend code
+/backend/ @mariecalallen12
+/backend/app/ @mariecalallen12
+/backend/tests/ @mariecalallen12
+
+# Frontend code
+/client-app/ @mariecalallen12
+/Admin-app/ @mariecalallen12
+
+# Docker and deployment
+/docker-compose*.yml @mariecalallen12
+/Dockerfile @mariecalallen12
+/nginx/ @mariecalallen12
+
+# Documentation
+/*.md @mariecalallen12
+/docs/ @mariecalallen12
+
+# Security sensitive files
+/.env.example @mariecalallen12
+/backend/app/core/security.py @mariecalallen12
