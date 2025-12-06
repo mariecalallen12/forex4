@@ -1,0 +1,254 @@
+import { defineStore } from 'pinia';
+import { ref, computed } from 'vue';
+import { useWebSocketStore } from './websocket';
+
+export const useMarketStore = defineStore('market', () => {
+  const instruments = ref([]);
+  const selectedInstrument = ref(null);
+  const priceData = ref(new Map());
+  const marketData = ref(new Map());
+
+  // Mock initial data - will be replaced with real WebSocket data
+  const initialInstruments = [
+    { symbol: 'EUR/USD', type: 'forex', price: 1.0849, change: 0.02, changePercent: 0.02, volume: 1250000000, high: 1.0865, low: 1.0832 },
+    { symbol: 'GBP/USD', type: 'forex', price: 1.26, change: 0.00, changePercent: 0.00, volume: 890000000, high: 1.2615, low: 1.2589 },
+    { symbol: 'USD/JPY', type: 'forex', price: 149.8, change: -0.01, changePercent: -0.01, volume: 1450000000, high: 149.95, low: 149.65 },
+    { symbol: 'AUD/USD', type: 'forex', price: 0.6750, change: 0.0012, changePercent: 0.18, volume: 650000000, high: 0.6765, low: 0.6738 },
+    { symbol: 'USD/CHF', type: 'forex', price: 0.8750, change: -0.0005, changePercent: -0.06, volume: 420000000, high: 0.8765, low: 0.8742 },
+    { symbol: 'BTC/USD', type: 'crypto', price: 43250, change: 1250, changePercent: 2.98, volume: 2500000000, high: 43500, low: 42000 },
+    { symbol: 'ETH/USD', type: 'crypto', price: 2650, change: 45, changePercent: 1.73, volume: 1800000000, high: 2680, low: 2605 },
+    { symbol: 'BNB/USD', type: 'crypto', price: 315, change: 8.5, changePercent: 2.77, volume: 450000000, high: 318, low: 306 },
+    { symbol: 'SOL/USD', type: 'crypto', price: 98.5, change: 2.3, changePercent: 2.39, volume: 320000000, high: 99.8, low: 96.2 },
+    { symbol: 'GOLD', type: 'commodity', price: 2045.30, change: -5.20, changePercent: -0.25, volume: 85000000, high: 2052.50, low: 2040.10 },
+    { symbol: 'OIL', type: 'commodity', price: 78.45, change: 0.05, changePercent: 0.06, volume: 120000000, high: 79.20, low: 77.80 },
+    { symbol: 'SILVER', type: 'commodity', price: 24.15, change: 0.12, changePercent: 0.50, volume: 35000000, high: 24.35, low: 24.00 },
+    { symbol: 'SPX500', type: 'index', price: 4785.50, change: 12.30, changePercent: 0.26, volume: 4500000000, high: 4792.30, low: 4775.20 },
+    { symbol: 'NAS100', type: 'index', price: 16850, change: 85, changePercent: 0.51, volume: 3200000000, high: 16900, low: 16780 },
+    { symbol: 'DJ30', type: 'index', price: 37580, change: 125, changePercent: 0.33, volume: 2800000000, high: 37620, low: 37450 },
+  ];
+
+  instruments.value = initialInstruments;
+  selectedInstrument.value = instruments.value[0];
+
+  // Initialize price data
+  initialInstruments.forEach(instrument => {
+    priceData.value.set(instrument.symbol, {
+      price: instrument.price,
+      change: instrument.change,
+      changePercent: instrument.changePercent,
+      timestamp: Date.now(),
+    });
+  });
+
+  const wsStore = useWebSocketStore();
+
+  // Subscribe to price updates
+  function subscribeToInstrument(symbol) {
+    const callback = (data) => {
+      if (data.symbol === symbol) {
+        priceData.value.set(symbol, {
+          price: data.price,
+          change: data.change,
+          changePercent: data.changePercent,
+          timestamp: Date.now(),
+        });
+
+        // Update instrument in list
+        const index = instruments.value.findIndex(i => i.symbol === symbol);
+        if (index !== -1) {
+          instruments.value[index] = {
+            ...instruments.value[index],
+            price: data.price,
+            change: data.change,
+            changePercent: data.changePercent,
+          };
+        }
+      }
+    };
+
+    wsStore.subscribe(symbol, callback);
+  }
+
+  function selectInstrument(instrument) {
+    selectedInstrument.value = instrument;
+    subscribeToInstrument(instrument.symbol);
+  }
+
+  function getPrice(symbol) {
+    return priceData.value.get(symbol) || { price: 0, change: 0, changePercent: 0 };
+  }
+
+  function filterInstruments(type) {
+    if (type === 'all') {
+      return instruments.value;
+    }
+    return instruments.value.filter(i => i.type === type);
+  }
+
+  // Market overview stats
+  const marketStats = computed(() => {
+    const total = instruments.value.length;
+    const up = instruments.value.filter(i => i.changePercent > 0).length;
+    const down = instruments.value.filter(i => i.changePercent < 0).length;
+    const totalVolume = instruments.value.reduce((sum, i) => sum + (i.volume || 0), 0);
+    
+    return {
+      totalAssets: total,
+      upMarkets: up,
+      downMarkets: down,
+      totalVolume,
+    };
+  });
+
+  // Filters and search
+  const searchQuery = ref('');
+  const selectedCategory = ref('all');
+  const sortBy = ref('price');
+  const sortOrder = ref('desc');
+
+  function setSearchQuery(query) {
+    searchQuery.value = query;
+  }
+
+  function setCategory(category) {
+    selectedCategory.value = category;
+  }
+
+  function setSort(sort, order = 'desc') {
+    sortBy.value = sort;
+    sortOrder.value = order;
+  }
+
+  const filteredAndSortedInstruments = computed(() => {
+    let filtered = filterInstruments(selectedCategory.value);
+
+    // Apply search
+    if (searchQuery.value) {
+      const query = searchQuery.value.toLowerCase();
+      filtered = filtered.filter(i => 
+        i.symbol.toLowerCase().includes(query) ||
+        i.name?.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply sorting
+    filtered = [...filtered].sort((a, b) => {
+      let aVal, bVal;
+      
+      switch (sortBy.value) {
+        case 'price':
+          aVal = a.price || 0;
+          bVal = b.price || 0;
+          break;
+        case 'change':
+          aVal = a.changePercent || 0;
+          bVal = b.changePercent || 0;
+          break;
+        case 'volume':
+          aVal = a.volume || 0;
+          bVal = b.volume || 0;
+          break;
+        default:
+          aVal = a.symbol;
+          bVal = b.symbol;
+      }
+
+      if (sortOrder.value === 'asc') {
+        return aVal > bVal ? 1 : -1;
+      } else {
+        return aVal < bVal ? 1 : -1;
+      }
+    });
+
+    return filtered;
+  });
+
+  // Simulate price updates (for development)
+  function simulatePriceUpdate() {
+    setInterval(() => {
+      instruments.value.forEach(instrument => {
+        const currentPrice = priceData.value.get(instrument.symbol)?.price || instrument.price;
+        const change = (Math.random() - 0.5) * 0.001 * currentPrice;
+        const newPrice = currentPrice + change;
+        const changePercent = (change / currentPrice) * 100;
+
+        priceData.value.set(instrument.symbol, {
+          price: newPrice,
+          change: change,
+          changePercent: changePercent,
+          timestamp: Date.now(),
+        });
+
+        const index = instruments.value.findIndex(i => i.symbol === instrument.symbol);
+        if (index !== -1) {
+          instruments.value[index] = {
+            ...instruments.value[index],
+            price: newPrice,
+            change: change,
+            changePercent: changePercent,
+          };
+        }
+      });
+    }, 2000);
+  }
+
+  // Enhanced WebSocket integration for real-time market data
+  function setupWebSocketListeners() {
+    // Listen for price updates from WebSocket
+    wsStore.subscribe('price_update', (data) => {
+      if (data.symbol && data.price !== undefined) {
+        priceData.value.set(data.symbol, {
+          price: data.price,
+          change: data.change || 0,
+          changePercent: data.changePercent || 0,
+          timestamp: Date.now(),
+        });
+
+        // Update instrument in list
+        const index = instruments.value.findIndex(i => i.symbol === data.symbol);
+        if (index !== -1) {
+          instruments.value[index] = {
+            ...instruments.value[index],
+            price: data.price,
+            change: data.change || 0,
+            changePercent: data.changePercent || 0,
+          };
+        }
+      }
+    });
+
+    // Listen for market data updates
+    wsStore.subscribe('market_data', (data) => {
+      if (data.instrument) {
+        marketData.value.set(data.instrument, data);
+      }
+    });
+  }
+
+  // Setup WebSocket listeners
+  if (typeof window !== 'undefined') {
+    setupWebSocketListeners();
+  }
+
+  return {
+    instruments,
+    selectedInstrument,
+    priceData,
+    marketData,
+    marketStats,
+    searchQuery,
+    selectedCategory,
+    sortBy,
+    sortOrder,
+    filteredAndSortedInstruments,
+    selectInstrument,
+    getPrice,
+    filterInstruments,
+    setSearchQuery,
+    setCategory,
+    setSort,
+    simulatePriceUpdate,
+    setupWebSocketListeners,
+  };
+});
+
