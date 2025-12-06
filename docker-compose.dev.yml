@@ -1,0 +1,147 @@
+version: '3.8'
+
+# Digital Utopia Platform - Development Docker Compose
+# Môi trường phát triển với hot-reload và debugging
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: forex4-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: digital_utopia_dev
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./backend/alembic:/alembic
+    ports:
+      - "5432:5432"
+    networks:
+      - forex4-dev-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: forex4-redis-dev
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_dev_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - forex4-dev-network
+
+  # Backend API Service (Development mode with hot-reload)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: forex4-backend-dev
+    restart: unless-stopped
+    environment:
+      DEBUG: "true"
+      ENVIRONMENT: development
+      SECRET_KEY: dev-secret-key-change-in-production
+      POSTGRES_SERVER: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: digital_utopia_dev
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      LOG_LEVEL: DEBUG
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "8000:8000"
+    networks:
+      - forex4-dev-network
+    volumes:
+      # Mount source code for hot-reload
+      - ./backend:/app
+      # Exclude these directories
+      - /app/__pycache__
+      - /app/.pytest_cache
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Client App (Development mode with Vite hot-reload)
+  client-app:
+    build:
+      context: ./client-app
+      dockerfile: Dockerfile.dev
+    container_name: forex4-client-dev
+    restart: unless-stopped
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000
+    ports:
+      - "5173:5173"
+    networks:
+      - forex4-dev-network
+    volumes:
+      - ./client-app:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0
+
+  # Admin App (Development mode with Vite hot-reload)
+  admin-app:
+    build:
+      context: ./Admin-app
+      dockerfile: Dockerfile.dev
+    container_name: forex4-admin-dev
+    restart: unless-stopped
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000
+    ports:
+      - "5174:5173"
+    networks:
+      - forex4-dev-network
+    volumes:
+      - ./Admin-app:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0
+
+  # PgAdmin for database management (Optional)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: forex4-pgadmin-dev
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@digitalutopia.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    networks:
+      - forex4-dev-network
+    volumes:
+      - pgadmin_dev_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+
+  # Redis Commander for Redis management (Optional)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: forex4-redis-commander-dev
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8081:8081"
+    networks:
+      - forex4-dev-network
+    depends_on:
+      - redis
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
+  pgadmin_dev_data:
+
+networks:
+  forex4-dev-network:
+    driver: bridge
