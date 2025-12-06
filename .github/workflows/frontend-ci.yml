@@ -82,7 +82,7 @@ jobs:
           VITE_API_BASE_URL: http://localhost:8000
 
       - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.4.0
         with:
           name: client-app-dist
           path: client-app/dist/
@@ -184,7 +184,7 @@ jobs:
           VITE_API_BASE_URL: http://localhost:8000
 
       - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.4.0
         with:
           name: admin-app-dist
           path: Admin-app/dist/
