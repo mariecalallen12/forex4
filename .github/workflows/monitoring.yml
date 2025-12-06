@@ -25,15 +25,15 @@ jobs:
           pip install safety pip-audit
           echo "## Python Dependency Security Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          safety check -r requirements.txt --json > safety-report.json || true
-          pip-audit -r requirements.txt --format json > pip-audit-report.json || true
           
           echo "### Safety Check Results" >> $GITHUB_STEP_SUMMARY
-          safety check -r requirements.txt || true
+          safety check -r requirements.txt --json > safety-report.json
+          safety check -r requirements.txt
           
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Pip Audit Results" >> $GITHUB_STEP_SUMMARY
-          pip-audit -r requirements.txt || true
+          pip-audit -r requirements.txt --format json > pip-audit-report.json
+          pip-audit -r requirements.txt
         continue-on-error: true
 
       - name: Upload Python Security Reports
@@ -55,8 +55,8 @@ jobs:
           cd client-app
           echo "## Client App Dependency Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          npm audit --json > npm-audit-client.json || true
-          npm audit || true
+          npm audit --json > npm-audit-client.json
+          npm audit
         continue-on-error: true
 
       - name: Check Node.js Dependencies - Admin App
@@ -64,8 +64,8 @@ jobs:
           cd Admin-app
           echo "## Admin App Dependency Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          npm audit --json > npm-audit-admin.json || true
-          npm audit || true
+          npm audit --json > npm-audit-admin.json
+          npm audit
         continue-on-error: true
 
       - name: Upload Node.js Security Reports

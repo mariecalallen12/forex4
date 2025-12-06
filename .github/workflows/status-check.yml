@@ -107,11 +107,12 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Security Checks" >> $GITHUB_STEP_SUMMARY
           
-          # Check for hardcoded secrets patterns
-          if grep -r "password.*=" --include="*.py" --include="*.js" backend/ client-app/ Admin-app/ 2>/dev/null | grep -v "POSTGRES_PASSWORD" | grep -q .; then
-            echo "⚠️ Potential hardcoded passwords found" >> $GITHUB_STEP_SUMMARY
+          # Check for hardcoded secrets patterns (expanded patterns)
+          secret_patterns="password.*=|token.*=|api_key.*=|secret.*=|SECRET_KEY.*=|private.*key"
+          if grep -rE "$secret_patterns" --include="*.py" --include="*.js" --include="*.vue" backend/ client-app/ Admin-app/ 2>/dev/null | grep -v "POSTGRES_PASSWORD" | grep -v "process.env" | grep -v "SECRET_KEY.*secrets" | grep -q .; then
+            echo "⚠️ Potential hardcoded secrets found - review manually" >> $GITHUB_STEP_SUMMARY
           else
-            echo "✅ No obvious hardcoded passwords" >> $GITHUB_STEP_SUMMARY
+            echo "✅ No obvious hardcoded secrets detected" >> $GITHUB_STEP_SUMMARY
           fi
           
           # Check for .env in git
