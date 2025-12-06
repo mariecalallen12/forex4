@@ -250,75 +250,98 @@ jobs:
     name: Backend Health Check
     runs-on: ubuntu-latest
     needs: [build]
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download Docker Image
-        uses: actions/download-artifact@v4.1.3
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          name: backend-docker-image
-          path: /tmp
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
 
-      - name: Load Docker Image
-        run: docker load --input /tmp/backend-image.tar
-
-      - name: Start Services
+      - name: Install dependencies
         run: |
-          docker network create test-network
-          
-          # Start PostgreSQL
-          docker run -d --name test-postgres \
-            --network test-network \
-            -e POSTGRES_USER=test_user \
-            -e POSTGRES_PASSWORD=test_pass \
-            -e POSTGRES_DB=test_db \
-            postgres:15-alpine
-          
-          # Start Redis
-          docker run -d --name test-redis \
-            --network test-network \
-            redis:7-alpine
-          
-          # Wait for services
-          sleep 10
-          
-          # Start Backend
-          docker run -d --name test-backend \
-            --network test-network \
-            -e SECRET_KEY=test-secret-key \
-            -e POSTGRES_SERVER=test-postgres \
-            -e POSTGRES_USER=test_user \
-            -e POSTGRES_PASSWORD=test_pass \
-            -e POSTGRES_DB=test_db \
-            -e REDIS_HOST=test-redis \
-            -p 8000:8000 \
-            forex4-backend:${{ github.sha }}
-          
-          # Wait for backend
-          sleep 15
+          cd backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Start backend in background
+        env:
+          SECRET_KEY: test-secret-key-for-ci-cd-pipeline
+          POSTGRES_SERVER: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: test_db
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          ENVIRONMENT: test
+          DEBUG: true
+        run: |
+          cd backend
+          # start uvicorn in background and redirect logs to file
+          uvicorn main:app --host 0.0.0.0 --port 8000 --log-level debug > backend.log 2>&1 &
+          echo $! > backend.pid
+          echo "Started backend with PID $(cat backend.pid)"
+
+      - name: Wait for backend to become healthy
+        run: |
+          cd backend
+          set -e
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8000/health; then
+              echo "Backend is healthy"
+              exit 0
+            fi
+            echo "Waiting for backend... ($i/30)"
+            sleep 1
+          done
+          echo "Backend did not become healthy within timeout"
+          echo "=== Backend logs ==="
+          cat backend.log || true
+          echo "=== Last 200 lines of backend.log ==="
+          tail -n 200 backend.log || true
+          exit 1
 
       - name: Health Check
         run: |
-          curl -f http://localhost:8000/health || exit 1
-          curl -f http://localhost:8000/docs || exit 1
+          curl -fsS http://localhost:8000/health || exit 1
+          curl -fsS http://localhost:8000/docs || exit 1
 
-      - name: Check Logs
+      - name: Stop backend
         if: always()
         run: |
-          echo "=== Backend Logs ==="
-          docker logs test-backend
-          echo "=== PostgreSQL Logs ==="
-          docker logs test-postgres
-          echo "=== Redis Logs ==="
-          docker logs test-redis
-
-      - name: Cleanup
-        if: always()
-        run: |
-          docker stop test-backend test-postgres test-redis || true
-          docker rm test-backend test-postgres test-redis || true
-          docker network rm test-network || true
+          cd backend
+          if [ -f backend.pid ]; then
+            kill $(cat backend.pid) || true
+            rm backend.pid
+          fi
 
   summary:
     name: CI Summary
