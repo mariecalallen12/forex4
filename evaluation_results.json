@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-12-06T02:24:17.357679",
+  "timestamp": "2025-12-06T02:29:09.830264",
   "backend": {
     "api_endpoints": [
       {
@@ -184,7 +184,7 @@
     "completion_rate": 88.0
   },
   "documentation": {
-    "total_files": 8,
+    "total_files": 10,
     "doc_files": [
       {
         "file": "giao-dien-tinh-nang-admin.md",
@@ -193,6 +193,14 @@
       {
         "file": "DIGITAL_UTOPIA_DESIGN_SUMMARY.md",
         "size_kb": 7.5
+      },
+      {
+        "file": "HUONG_DAN_DANH_GIA.md",
+        "size_kb": 8.48
+      },
+      {
+        "file": "BAO_CAO_DANH_GIA_DU_AN.md",
+        "size_kb": 29.03
       },
       {
         "file": "giao-dien-khach-hang-ca-nhan.md",
@@ -220,10 +228,10 @@
       }
     ],
     "vietnamese_docs": 2,
-    "completion_rate": 80.0
+    "completion_rate": 100.0
   },
   "overall": {
-    "completion_rate": 89.51,
+    "completion_rate": 91.51,
     "backend_weight": "30%",
     "frontend_weight": "30%",
     "database_weight": "15%",
