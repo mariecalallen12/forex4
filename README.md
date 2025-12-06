@@ -2,10 +2,30 @@
 
 **Phiên bản:** 2.0.0  
 **Trạng thái:** ✅ Production Ready - Backend Migration 100% Complete  
-**Ngày cập nhật:** 2025-12-05  
+**Ngày cập nhật:** 2025-12-06  
 **Backend:** FastAPI Migration Complete (72/72 endpoints, 12/12 modules)  
 **Database:** PostgreSQL + Redis Architecture (45+ tables)  
 **Architecture:** Microservices with Enterprise-Grade Security  
+
+---
+
+## 🔄 CI/CD Status
+
+![Backend CI](https://github.com/mariecalallen12/forex4/actions/workflows/backend-ci.yml/badge.svg)
+![Frontend CI](https://github.com/mariecalallen12/forex4/actions/workflows/frontend-ci.yml/badge.svg)
+![Integration Test](https://github.com/mariecalallen12/forex4/actions/workflows/integration-test.yml/badge.svg)
+![Deployment](https://github.com/mariecalallen12/forex4/actions/workflows/deploy.yml/badge.svg)
+![Monitoring](https://github.com/mariecalallen12/forex4/actions/workflows/monitoring.yml/badge.svg)
+![Status Check](https://github.com/mariecalallen12/forex4/actions/workflows/status-check.yml/badge.svg)
+
+**🎯 Automated CI/CD Pipeline:**
+- ✅ Automated testing on every push
+- ✅ Code quality & security scanning
+- ✅ Docker build & integration testing
+- ✅ Automated deployment pipeline
+- ✅ Daily monitoring & health checks
+
+📖 **[View Complete CI/CD Documentation](CI_CD_WORKFLOW_GUIDE.md)**
 
 ---
 
@@ -1523,6 +1543,12 @@ aws ecs update-service --cluster digital-utopia-cluster --service client-app --f
 - `BACKEND_VERIFICATION_CHECKLIST.md`: Manual verification process
 - `VERIFICATION_PROCESS_SUMMARY.md`: Verification methodology
 - `ENDPOINTS_MIGRATION_LIST.md`: Complete endpoint catalog
+
+**CI/CD & DevOps**:
+- `CI_CD_WORKFLOW_GUIDE.md`: Complete CI/CD pipeline documentation
+- `.github/workflows/`: GitHub Actions workflows (6 automated pipelines)
+- `DEPLOYMENT_GUIDE.md`: Deployment instructions and procedures
+- `DOCKER_DEPLOYMENT.md`: Docker-based deployment guide
 
 **Development Resources**:
 - API documentation (Swagger/OpenAPI)
