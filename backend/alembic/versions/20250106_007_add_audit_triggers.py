@@ -30,6 +30,8 @@ def upgrade():
         BEGIN
             -- For INSERT operations
             IF (TG_OP = 'INSERT') THEN
+                -- Note: current_setting() values should be set by application layer
+                -- with proper validation to prevent injection attacks
                 INSERT INTO audit_trails (
                     user_id,
                     action,

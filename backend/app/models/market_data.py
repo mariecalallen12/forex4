@@ -6,7 +6,6 @@ Models for market data, price feeds, trading pairs, and market analysis
 from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey, Index, Numeric
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from datetime import datetime
 
 from ..db.session import Base
 
@@ -31,7 +30,7 @@ class MarketData(Base):
     trades_count = Column(Integer, default=0)
     vwap = Column(Numeric(20, 8))  # Volume Weighted Average Price
     
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, server_default=func.now())
     
     # Indexes
     __table_args__ = (
@@ -70,8 +69,8 @@ class PriceFeed(Base):
     is_tradable = Column(Boolean, default=True)
     
     # Timestamps
-    last_updated = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    last_updated = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    created_at = Column(DateTime, server_default=func.now())
 
 
 class TradingPair(Base):
@@ -116,8 +115,8 @@ class TradingPair(Base):
     # Timestamps
     listed_at = Column(DateTime)
     delisted_at = Column(DateTime)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     
     # Relationships
     indicators = relationship("MarketIndicator", back_populates="trading_pair")
@@ -163,7 +162,7 @@ class MarketIndicator(Base):
     
     # Timestamps
     calculated_at = Column(DateTime, nullable=False, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, server_default=func.now())
     
     # Relationships
     trading_pair = relationship("TradingPair", back_populates="indicators")
@@ -204,8 +203,8 @@ class MarketNews(Base):
     
     # Timestamps
     published_at = Column(DateTime, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     
     # Indexes
     __table_args__ = (
@@ -245,7 +244,7 @@ class MarketSentiment(Base):
     
     # Timestamps
     analyzed_at = Column(DateTime, nullable=False, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, server_default=func.now())
     
     # Indexes
     __table_args__ = (
@@ -283,7 +282,7 @@ class OrderBook(Base):
     
     # Timestamp
     snapshot_at = Column(DateTime, nullable=False, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, server_default=func.now())
     
     # Relationships
     trading_pair = relationship("TradingPair", back_populates="order_books")
@@ -317,7 +316,7 @@ class TradeHistory(Base):
     
     # Timestamps
     traded_at = Column(DateTime, nullable=False, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, server_default=func.now())
     
     # Indexes
     __table_args__ = (
