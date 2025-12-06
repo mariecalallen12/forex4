@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-12-06T02:48:21.476939",
+  "timestamp": "2025-12-06T02:54:32.875017",
   "backend": {
     "api_endpoints": [
       {
@@ -166,25 +166,28 @@
     "completion_rate": 100.0
   },
   "database": {
-    "migrations": 2,
+    "migrations": 6,
     "models": 7,
     "has_alembic": true,
-    "completion_rate": 63.75
+    "completion_rate": 93.75
   },
   "tests": {
     "test_files": [
       "backend/test_comprehensive_auth.py",
       "backend/test_auth.py",
       "backend/test_endpoints.py",
+      "backend/tests/test_financial_module.py",
       "backend/tests/test_auth_integration.py",
-      "backend/tests/test_services.py"
+      "backend/tests/test_services.py",
+      "backend/tests/test_trading_module.py",
+      "backend/tests/test_portfolio_module.py"
     ],
-    "total_test_files": 5,
-    "total_test_functions": 38,
-    "completion_rate": 88.0
+    "total_test_files": 8,
+    "total_test_functions": 77,
+    "completion_rate": 100.0
   },
   "documentation": {
-    "total_files": 12,
+    "total_files": 14,
     "doc_files": [
       {
         "file": "giao-dien-tinh-nang-admin.md",
@@ -215,6 +218,14 @@
         "size_kb": 24.15
       },
       {
+        "file": "CHECKLIST_HOAN_THIEN_100.md",
+        "size_kb": 15.33
+      },
+      {
+        "file": "DEPLOYMENT_GUIDE.md",
+        "size_kb": 14.74
+      },
+      {
         "file": "DIGITAL_UTOPIA_DATABASE_SCHEMA.md",
         "size_kb": 28.89
       },
@@ -239,12 +250,12 @@
     "completion_rate": 100
   },
   "overall": {
-    "completion_rate": 91.51,
+    "completion_rate": 97.81,
     "backend_weight": "30%",
     "frontend_weight": "30%",
     "database_weight": "15%",
     "tests_weight": "15%",
     "documentation_weight": "10%",
-    "status": "Hoàn thiện tốt"
+    "status": "Hoàn thiện xuất sắc"
   }
 }
