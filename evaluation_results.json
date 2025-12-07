@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-12-06T02:54:32.875017",
+  "timestamp": "2025-12-06T09:10:42.001113",
   "backend": {
     "api_endpoints": [
       {
@@ -81,6 +81,11 @@
         "classes": 2
       },
       {
+        "module": "market_data",
+        "file": "market_data.py",
+        "classes": 8
+      },
+      {
         "module": "user",
         "file": "user.py",
         "classes": 6
@@ -106,7 +111,7 @@
         "classes": 2
       }
     ],
-    "total_models": 7,
+    "total_models": 8,
     "services": [
       {
         "module": "compliance_service",
@@ -150,7 +155,7 @@
       }
     ],
     "total_services": 8,
-    "completion_rate": 95.83
+    "completion_rate": 100.0
   },
   "frontend": {
     "client_app": {
@@ -166,10 +171,10 @@
     "completion_rate": 100.0
   },
   "database": {
-    "migrations": 6,
-    "models": 7,
+    "migrations": 7,
+    "models": 8,
     "has_alembic": true,
-    "completion_rate": 93.75
+    "completion_rate": 100.0
   },
   "tests": {
     "test_files": [
@@ -187,31 +192,63 @@
     "completion_rate": 100.0
   },
   "documentation": {
-    "total_files": 14,
+    "total_files": 27,
     "doc_files": [
       {
         "file": "giao-dien-tinh-nang-admin.md",
         "size_kb": 12.12
       },
       {
+        "file": "BAO_CAO_TONG_HOP_TOAN_DIEN.md",
+        "size_kb": 31.3
+      },
+      {
+        "file": "DOCKER_IMPLEMENTATION_SUMMARY.md",
+        "size_kb": 10.79
+      },
+      {
+        "file": "CI_CD_QUICK_START.md",
+        "size_kb": 6.06
+      },
+      {
         "file": "DIGITAL_UTOPIA_DESIGN_SUMMARY.md",
         "size_kb": 7.5
+      },
+      {
+        "file": "TONG_KET_HOAN_THANH_100.md",
+        "size_kb": 10.19
       },
       {
         "file": "HUONG_DAN_DANH_GIA.md",
         "size_kb": 8.48
       },
       {
+        "file": "IMPLEMENTATION_SUMMARY.md",
+        "size_kb": 17.46
+      },
+      {
         "file": "BAO_CAO_DANH_GIA_DU_AN.md",
         "size_kb": 29.03
+      },
+      {
+        "file": "CI_CD_WORKFLOW_GUIDE.md",
+        "size_kb": 15.06
       },
       {
         "file": "giao-dien-khach-hang-ca-nhan.md",
         "size_kb": 19.89
       },
       {
+        "file": "DOCKER_README.md",
+        "size_kb": 4.69
+      },
+      {
+        "file": "SETUP_INSTRUCTIONS.md",
+        "size_kb": 11.82
+      },
+      {
         "file": "README.md",
-        "size_kb": 47.69
+        "size_kb": 48.89
       },
       {
         "file": "DIGITAL_UTOPIA_SYSTEM_WORKFLOWS.md",
@@ -234,12 +271,32 @@
         "size_kb": 8.48
       },
       {
+        "file": "DOCKER_DEPLOYMENT.md",
+        "size_kb": 15.64
+      },
+      {
         "file": "DIGITAL_UTOPIA_CLIENT_APP_REPORT.md",
         "size_kb": 84.49
       },
       {
+        "file": "PROJECT_STATUS_REPORT.md",
+        "size_kb": 14.78
+      },
+      {
+        "file": "BAO_CAO_TIEN_DO_HOAN_THIEN.md",
+        "size_kb": 12.26
+      },
+      {
         "file": "QUICK_REFERENCE.md",
         "size_kb": 1.54
+      },
+      {
+        "file": "ACTIVATION_GUIDE.md",
+        "size_kb": 14.18
+      },
+      {
+        "file": "COMPLETE_SETUP_SUMMARY.md",
+        "size_kb": 17.27
       },
       {
         "file": "VUE_AI_DESIGN_PROMPT.md",
@@ -250,7 +307,7 @@
     "completion_rate": 100
   },
   "overall": {
-    "completion_rate": 97.81,
+    "completion_rate": 100.0,
     "backend_weight": "30%",
     "frontend_weight": "30%",
     "database_weight": "15%",
